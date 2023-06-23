@@ -36,7 +36,7 @@ jobs:
         run: ls -la ./target/
        
       
-  containerisation:
+  dockerized:
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -51,7 +51,7 @@ jobs:
             
       - name: Docker Build 
         run: |
-          docker build . -t ${{ secrets.DOCKER_USER }}/springboot-petclinic
+          docker build . -t ${{ secrets.DOCKER_USER }}/springboot-petclinic:${{ github.run_number }}
           docker image ls
           
       - uses: docker/login-action@v2
