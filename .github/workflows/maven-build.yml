@@ -33,7 +33,7 @@ jobs:
           name: jar-artifact
           path: ${{ github.workspace }}/target/*.jar
       - name: List workspace items
-        run: ls -la ${{ github.workspace }}/target/
+        run: ls -la ./target/
        
       
   containerisation:
@@ -47,7 +47,7 @@ jobs:
             path: ./
             
       - name: list workspace items
-        run: ls -la ${{ github.workspace }}
+        run: ls -la ./
             
       - name: Docker Build 
         run: |
