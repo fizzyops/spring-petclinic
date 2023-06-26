@@ -92,5 +92,5 @@ jobs:
           registryPassword: ${{ secrets.SPRINGBOOTCLINIC_REGISTRY_PASSWORD }}
           containerAppName: springboot-clinic
           resourceGroup: usd
-          imageToBuild: fizzyops/fizzyops/springboot-petclinic:${{ github.sha }}
+          imageToBuild: fizzyops/springboot-petclinic:${{ github.sha }}
 
