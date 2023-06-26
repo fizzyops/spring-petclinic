@@ -71,6 +71,12 @@ jobs:
     steps:
       - name: Checkout to the branch
         uses: actions/checkout@v2
+      
+      - name: download artifacts from CI Job
+      - uses: actions/download-artifact@v1
+        with:
+            name: jar-artifact
+            path: ./
 
       - name: Azure Login
         uses: azure/login@v1
