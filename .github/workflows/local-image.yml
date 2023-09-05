@@ -1,0 +1,95 @@
+name: Local Build Java CI with Maven 
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '17' ]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{matrix.java}}
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{matrix.java}}
+          distribution: 'adopt'
+          cache: maven
+      #- name: Build with Maven Wrapper
+      #  run: ./mvnw -B package
+      - name: Compile
+        run: mvn -B compile --file ./pom.xml
+
+      - name: Build a package
+        run: mvn -B package --file ./pom.xml
+
+      - name: Temporarily save jar artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: jar-artifact
+          path: ${{ github.workspace }}/target/*.jar
+      - name: List workspace items
+        run: ls -la ./target/
+       
+      
+  dockerized:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v1
+        with:
+            name: jar-artifact
+            path: ./
+            
+      - name: list workspace items
+        run: ls -la ./
+            
+      - name: Docker Build 
+        run: |
+          docker build . -t ${{ secrets.DOCKER_USER }}/springboot-petclinic:${{ github.run_number }}
+          docker image ls
+          
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Docker push
+        run: docker push fizzyops/springboot-petclinic:${{ github.run_number }}
+    
+  
+    
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    needs: dockerized
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+      
+      - name: download artifacts from CI Job
+        uses: actions/download-artifact@v1
+        with:
+            name: jar-artifact
+            path: ./
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.SPRINGBOOTCLINIC_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }} 
+          registryUrl: docker.io
+          registryUsername: ${{ secrets.SPRINGBOOTCLINIC_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.SPRINGBOOTCLINIC_REGISTRY_PASSWORD }}
+          containerAppName: springboot-clinic
+          resourceGroup: usd
+          imageToBuild: fizzyops/springboot-petclinic:${{ github.run_number }}
